@@ -1,0 +1,16 @@
+{
+  "camera_url": "rtsp://UTILISATEUR:MOTDEPASSE@192.168.1.50:554/live/ch0",
+  "camera_url_live": "",
+  "dossier_enregistrements": "enregistrements",
+  "duree_segment_minutes": 10,
+  "enregistrer_audio": true,
+  "conservation_jours": 7,
+  "espace_disque_min_go": 5,
+  "detection_mouvement": true,
+  "seuil_mouvement_pourcent": 1.5,
+  "pause_entre_alertes_secondes": 20,
+  "port_web": 8080,
+  "utilisateur_web": "",
+  "mot_de_passe_web": "",
+  "ffmpeg": "ffmpeg"
+}

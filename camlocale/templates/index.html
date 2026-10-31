@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ma caméra</title>
+<style>
+  :root { --fond:#14161a; --carte:#1f2228; --texte:#e8e8e8; --gris:#9aa0a6; --accent:#4f9cf9; --rouge:#e5534b; --vert:#3fb950; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background:var(--fond); color:var(--texte); }
+  header { display:flex; align-items:center; gap:1rem; padding:.8rem 1.2rem; background:var(--carte); flex-wrap:wrap; }
+  header h1 { font-size:1.15rem; margin:0; flex:1; }
+  .pastille { padding:.2rem .6rem; border-radius:1rem; font-size:.85rem; background:#333; }
+  .ok { background:#1d3b25; color:var(--vert); } .ko { background:#3d1f1f; color:var(--rouge); }
+  main { display:grid; grid-template-columns: minmax(0,2fr) minmax(280px,1fr); gap:1rem; padding:1rem; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background:var(--carte); border-radius:.6rem; padding:1rem; }
+  h2 { font-size:1rem; margin:0 0 .8rem; color:var(--gris); font-weight:600; }
+  #ecran { width:100%; background:#000; border-radius:.4rem; aspect-ratio:16/9; object-fit:contain; display:block; }
+  .barre { display:flex; gap:.5rem; margin-top:.6rem; flex-wrap:wrap; }
+  button, .bouton { background:#2d323b; color:var(--texte); border:0; padding:.45rem .8rem; border-radius:.35rem; cursor:pointer; text-decoration:none; font-size:.9rem; }
+  button:hover, .bouton:hover { background:#3a404b; }
+  button.actif { background:var(--accent); color:#fff; }
+  select { background:#2d323b; color:var(--texte); border:0; padding:.4rem; border-radius:.35rem; }
+  .liste { max-height:420px; overflow:auto; }
+  .ligne { display:flex; justify-content:space-between; align-items:center; padding:.4rem .2rem; border-bottom:1px solid #2a2e35; font-size:.9rem; gap:.5rem; }
+  .ligne:hover { background:#262a31; }
+  .gris { color:var(--gris); font-size:.8rem; }
+  .mvts { display:grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap:.5rem; max-height:520px; overflow:auto; }
+  .mvt { cursor:pointer; background:#262a31; border-radius:.35rem; overflow:hidden; font-size:.78rem; }
+  .mvt img { width:100%; display:block; aspect-ratio:16/9; object-fit:cover; }
+  .mvt div { padding:.25rem .4rem; }
+  .vide { color:var(--gris); font-size:.9rem; }
+  .erreur { color:var(--rouge); font-size:.8rem; white-space:pre-wrap; margin-top:.5rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐾 Ma caméra</h1>
+  <span id="pDirect" class="pastille">Direct…</span>
+  <span id="pRec" class="pastille">Enregistrement…</span>
+  <span id="heure" class="gris"></span>
+</header>
+<main>
+  <div>
+    <section>
+      <h2 id="titreEcran">En direct</h2>
+      <img id="ecran" src="direct.mjpg" alt="Direct">
+      <video id="lecteur" controls style="display:none;width:100%;border-radius:.4rem;background:#000"></video>
+      <div class="barre">
+        <button id="bDirect" class="actif" onclick="voirDirect()">● Direct</button>
+        <a class="bouton" href="photo.jpg" target="_blank">📷 Photo</a>
+        <a id="bTelecharger" class="bouton" style="display:none">⬇ Télécharger la vidéo</a>
+        <span id="vitesses" style="display:none">
+          <button onclick="vitesse(1)">x1</button><button onclick="vitesse(2)">x2</button>
+          <button onclick="vitesse(4)">x4</button><button onclick="vitesse(8)">x8</button>
+        </span>
+      </div>
+      <div id="erreur" class="erreur"></div>
+    </section>
+    <section style="margin-top:1rem">
+      <h2>Mouvements détectés <span id="nbMvt" class="gris"></span></h2>
+      <div id="mvts" class="mvts"></div>
+    </section>
+  </div>
+  <section>
+    <h2>Enregistrements</h2>
+    <select id="jour" onchange="afficherVideos()"></select>
+    <div id="videos" class="liste" style="margin-top:.6rem"></div>
+  </section>
+</main>
+<script>
+let etat = null;
+const $ = id => document.getElementById(id);
+
+function voirDirect() {
+  $('lecteur').pause(); $('lecteur').style.display = 'none';
+  $('ecran').style.display = 'block'; $('ecran').src = 'direct.mjpg?' + Date.now();
+  $('bDirect').classList.add('actif'); $('titreEcran').textContent = 'En direct';
+  $('bTelecharger').style.display = 'none'; $('vitesses').style.display = 'none';
+}
+function lire(nom, decalage = 0) {
+  $('ecran').src = ''; $('ecran').style.display = 'none';
+  const v = $('lecteur'); v.style.display = 'block'; v.src = 'videos/' + nom;
+  v.onloadedmetadata = () => { v.currentTime = Math.max(0, decalage - 3); v.play(); };
+  $('bDirect').classList.remove('actif');
+  const [j, h] = nom.replace('.mp4','').split('_');
+  $('titreEcran').textContent = 'Enregistrement du ' + j.split('-').reverse().join('/') + ' à ' + h.replaceAll('-', ':');
+  $('bTelecharger').href = 'videos/' + nom + '?dl=1'; $('bTelecharger').style.display = '';
+  $('vitesses').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function vitesse(x) { $('lecteur').playbackRate = x; }
+
+function dateVideo(v) { return new Date(v.jour + 'T' + v.heure); }
+
+function ouvrirMouvement(e) {
+  // Trouve la vidéo qui contient ce moment et se positionne dessus.
+  const t = new Date(e.heure);
+  const toutes = Object.values(etat.jours).flat();
+  const v = toutes.find(v => dateVideo(v) <= t);
+  if (!v) { window.open('mouvements/' + e.image); return; }
+  lire(v.nom, (t - dateVideo(v)) / 1000);
+}
+
+function afficherVideos() {
+  const j = $('jour').value, liste = (etat.jours[j] || []);
+  $('videos').innerHTML = liste.length ? '' : '<p class="vide">Aucun enregistrement.</p>';
+  for (const v of liste) {
+    const d = document.createElement('div'); d.className = 'ligne';
+    d.innerHTML = `<span>▶ ${v.heure} ${v.en_cours ? '<span class="gris">(en cours)</span>' : ''}</span>
+                   <span class="gris">${v.taille_mo} Mo</span>`;
+    d.style.cursor = 'pointer';
+    d.onclick = () => lire(v.nom);
+    $('videos').appendChild(d);
+  }
+}
+
+async function rafraichir() {
+  try {
+    const r = await fetch('api/etat'); etat = await r.json();
+  } catch { $('pDirect').className = 'pastille ko'; $('pDirect').textContent = 'Logiciel arrêté ?'; return; }
+  $('heure').textContent = new Date(etat.heure).toLocaleString('fr-FR');
+  $('pDirect').className = 'pastille ' + (etat.direct_connecte ? 'ok' : 'ko');
+  $('pDirect').textContent = etat.direct_connecte ? 'Caméra connectée' : 'Caméra déconnectée';
+  const rec = etat.enregistrement === 'enregistrement';
+  $('pRec').className = 'pastille ' + (rec ? 'ok' : 'ko');
+  $('pRec').textContent = rec ? '● Enregistre' : 'Enregistrement : ' + etat.enregistrement;
+  $('erreur').textContent = rec ? '' : (etat.erreur || '');
+
+  const jours = Object.keys(etat.jours), sel = $('jour'), avant = sel.value;
+  sel.innerHTML = jours.map(j => `<option value="${j}">${new Date(j+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} (${etat.jours[j].length})</option>`).join('');
+  if (jours.includes(avant)) sel.value = avant;
+  afficherVideos();
+
+  $('nbMvt').textContent = etat.detection ? `(${etat.mouvements.length})` : '(détection désactivée)';
+  $('mvts').innerHTML = etat.mouvements.length ? '' : '<p class="vide">Aucun mouvement pour l\'instant.</p>';
+  for (const e of etat.mouvements) {
+    const d = document.createElement('div'); d.className = 'mvt';
+    d.innerHTML = `<img loading="lazy" src="mouvements/${e.image}"><div>${new Date(e.heure).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
+    d.onclick = () => ouvrirMouvement(e);
+    $('mvts').appendChild(d);
+  }
+}
+rafraichir(); setInterval(rafraichir, 15000);
+</script>
+</body>
+</html>
