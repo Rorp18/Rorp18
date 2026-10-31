@@ -24,6 +24,17 @@ La caméra doit être sur le **même réseau local** que le PC, mais ce réseau 
 Dans l'appli Blurams, va dans les **paramètres de la caméra** et cherche une option **RTSP** ou **ONVIF** (souvent dans *Paramètres avancés*). Active-la et choisis un **identifiant et un mot de passe RTSP**.
 Selon le modèle et la version du firmware, cette option n'existe pas toujours : mets la caméra à jour depuis l'appli si tu ne la vois pas. **Sans RTSP/ONVIF, aucun logiciel tiers ne peut lire la caméra** (le flux est alors chiffré vers les serveurs Blurams).
 
+### Cas particulier des caméras Blurams
+
+D'après l'aide officielle de Blurams, leurs caméras **ne proposent pas de RTSP** et ne fonctionnent qu'avec l'appli et le cloud. Ce qu'on peut tenter :
+
+1. **Voir ce que ta caméra expose en local.** Relie-la à un réseau sans internet (voir étape 1), puis lance :
+   `decouvrir.bat --ports <IP_CAMERA>`
+   Le scan teste les 65 535 ports et reconnaît les flux RTSP ou les images HTTP/MJPEG. Si une adresse marquée ✔ apparaît, mets-la dans `camera_url`.
+2. **Carte microSD.** La caméra peut enregistrer sur une carte microSD. On peut ensuite la lire sur le PC, à condition que la caméra enregistre bien sans connexion et que ses fichiers soient lisibles.
+3. **Partage de connexion du téléphone (4G).** L'appli Blurams fonctionne alors normalement, mais ça consomme des données et reste dépendant du cloud.
+4. **Caméra compatible RTSP/ONVIF.** Si rien de ce qui précède ne marche, c'est la solution fiable : par exemple TP-Link Tapo C200/C210 (RTSP à activer dans l'appli) ou les caméras Reolink. Ce logiciel fonctionne directement avec elles.
+
 ## 3. Installer (Windows)
 
 1. Installe **Python 3** : <https://www.python.org/downloads/> (coche *« Add Python to PATH »*).

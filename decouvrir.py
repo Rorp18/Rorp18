@@ -3,6 +3,8 @@
 Usage :
     python decouvrir.py                         -> cherche les caméras (ONVIF + port 554)
     python decouvrir.py 192.168.1.50 admin mdp  -> teste les adresses RTSP sur cette IP
+    python decouvrir.py --ports 192.168.1.50    -> scanne TOUS les ports de la caméra
+                                                   (pour voir ce qu'elle expose vraiment)
 """
 import ipaddress
 import re
@@ -112,7 +114,54 @@ def tester_ip(ip, utilisateur="", mdp=""):
         print("de la caméra, ainsi que l'identifiant et le mot de passe RTSP.")
 
 
+CHEMINS_HTTP = ["/video.mjpg", "/video.mjpg?q=30&fps=33&id=0.5", "/mjpeg", "/snapshot.jpg",
+                "/snap.jpg", "/image.jpg", "/tmpfs/auto.jpg", "/cgi-bin/snapshot.cgi", "/"]
+
+
+def scanner_ports(ip):
+    """Scanne les 65535 ports TCP de la caméra et essaie de reconnaître ce qui répond."""
+    print(f"Scan de tous les ports de {ip} (environ 1 minute)…")
+    with ThreadPoolExecutor(400) as ex:
+        ouverts = [p for p, ok in ex.map(lambda p: (p, port_ouvert(ip, p, 0.5)), range(1, 65536)) if ok]
+    if not ouverts:
+        print("Aucun port ouvert : la caméra n'accepte aucune connexion locale.")
+        return
+    for port in ouverts:
+        print(f"\n  Port {port} ouvert")
+        # RTSP ?
+        try:
+            with socket.create_connection((ip, port), timeout=2) as s:
+                s.sendall(f"OPTIONS rtsp://{ip}:{port}/ RTSP/1.0\r\nCSeq: 1\r\n\r\n".encode())
+                rep = s.recv(512)
+            if rep.startswith(b"RTSP/"):
+                print("    -> serveur RTSP ! Teste :  python decouvrir.py", ip, "<utilisateur> <mdp>")
+                continue
+        except OSError:
+            rep = b""
+        # HTTP ?
+        for chemin in CHEMINS_HTTP:
+            try:
+                with socket.create_connection((ip, port), timeout=2) as s:
+                    s.sendall(f"GET {chemin} HTTP/1.0\r\nHost: {ip}\r\n\r\n".encode())
+                    rep = s.recv(1024)
+            except OSError:
+                break
+            if not rep.startswith(b"HTTP/"):
+                break
+            entete = rep.split(b"\r\n\r\n")[0].decode(errors="replace")
+            ligne1 = entete.splitlines()[0]
+            type_ = next((l for l in entete.splitlines() if l.lower().startswith("content-type")), "")
+            print(f"    http://{ip}:{port}{chemin}  -> {ligne1}  {type_}")
+            if "image" in type_.lower() or "multipart" in type_.lower():
+                print("    ✔ IMAGE/VIDÉO trouvée ! Mets cette adresse dans camera_url.")
+        if rep and not rep.startswith((b"HTTP/", b"RTSP/")):
+            print(f"    protocole inconnu, début de réponse : {rep[:60]!r}")
+
+
 def main():
+    if len(sys.argv) >= 3 and sys.argv[1] == "--ports":
+        scanner_ports(sys.argv[2])
+        return
     if len(sys.argv) >= 2:
         tester_ip(sys.argv[1], *(sys.argv[2:4]))
         return
