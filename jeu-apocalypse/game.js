@@ -675,7 +675,8 @@ function act(a, v) {
     case 'rules': return showModal(rulesHtml());
     case 'closeModal': return $('#modal').classList.add('hidden');
     case 'log': return showModal(logHtml());
-    case 'quit': if (confirm('Quitter la partie en cours ?')) { view = 'home'; S = null; R = null; render(); } return;
+    case 'quit': return showModal('<h2>Quitter la partie ?</h2><p>La partie en cours sera perdue.</p><div class="btns"><button class="btn" data-a="quitYes">Quitter</button><button class="btn ghost" data-a="closeModal">Continuer à jouer</button></div>');
+    case 'quitYes': $('#modal').classList.add('hidden'); view = 'home'; S = null; R = null; return render();
     case 'mode': setup.mode = v; return render();
     case 'scen': setup.scen = v; return render();
     case 'len': setup.len = +v; return render();

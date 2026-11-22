@@ -1,10 +1,11 @@
 :root {
   --bg: #14110e; --panel: #1f1a15; --panel2: #29221b; --line: #3d3328;
   --text: #ece3d3; --muted: #a39682; --rust: #e0782f; --rust2: #b85a1b;
+  color-scheme: dark;
   --green: #8fb339; --red: #d4513a; --gold: #e8c15a; --blue: #5aa4d4;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-size: 16px; }
 body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.45; min-height: 100vh;
   background: radial-gradient(1200px 600px at 50% -10%, #2a1d12 0%, var(--bg) 60%); }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -12,7 +13,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 h1, h2, h3, h4 { font-family: 'Courier New', monospace; letter-spacing: .5px; margin: 0 0 .5rem; }
 small, em { font-style: normal; }
 .hidden { display: none !important; }
-#app { max-width: 920px; margin: 0 auto; padding: 14px 14px 60px; }
+#app { max-width: 920px; margin: 0 auto; padding-block: 14px 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
 /* ----- Boutons ----- */
 .btn { background: linear-gradient(var(--rust), var(--rust2)); color: #fff; border: 0; border-radius: 10px;
